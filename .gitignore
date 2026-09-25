@@ -9,3 +9,6 @@ certs/
 *.pem
 .DS_Store
 Thumbs.db
+
+# Log del script de arranque del instructor
+levantar-todo.log
