@@ -13,6 +13,7 @@ Sigue la guía **[00-preparacion](00-preparacion/README.md)**. Es imprescindible
 ```text
 .
 ├── 00-preparacion/        Instalación de Docker y verificación del entorno
+├── presentaciones/        Diapositivas de los cuatro días (PowerPoint)
 ├── entorno/               Replica set de 3 nodos + toolbox (días 2, 3 y 4)
 │   ├── compose.yml          Entorno base
 │   ├── compose.tls.yml      Override para el laboratorio de TLS
