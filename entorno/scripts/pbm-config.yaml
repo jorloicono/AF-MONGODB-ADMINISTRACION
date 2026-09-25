@@ -1,0 +1,11 @@
+# Configuración de Percona Backup for MongoDB para el laboratorio
+# Almacenamiento: sistema de ficheros compartido por los tres pbm-agent
+storage:
+  type: filesystem
+  filesystem:
+    path: /backups
+pitr:
+  enabled: false
+  oplogSpanMin: 1
+backup:
+  compression: s2

@@ -1,0 +1,50 @@
+# =============================================================================
+#  Día 1 - Administración básica
+#
+#  solo     -> mongod 8.0 standalone arrancado con fichero de configuración
+#  legacy   -> mongod 7.0 para practicar la actualización a 8.0 (Laboratorio 02)
+#  toolbox  -> puesto de administración con mongosh y Database Tools
+#
+#  Arranque:  docker compose up -d solo toolbox
+# =============================================================================
+name: curso-mongo-dia1
+
+services:
+  solo:
+    image: mongodb/mongodb-community-server:8.0-ubi9
+    container_name: solo
+    hostname: solo
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    stop_grace_period: 60s
+    volumes:
+      - solo-data:/data/db
+      - ./config/mongod.conf:/etc/mongod.conf:ro
+    networks: [dia1net]
+
+  legacy:
+    image: mongodb/mongodb-community-server:${LEGACY_TAG:-7.0-ubi9}
+    container_name: legacy
+    hostname: legacy
+    stop_grace_period: 60s
+    volumes:
+      - legacy-data:/data/db
+    networks: [dia1net]
+
+  toolbox:
+    image: mongo:8.0
+    container_name: toolbox-dia1
+    hostname: toolbox
+    entrypoint: ["sleep", "infinity"]
+    init: true
+    working_dir: /root
+    volumes:
+      - ./scripts:/scripts:ro
+      - ../entorno/scripts/datos.js:/scripts-comunes/datos.js:ro
+    networks: [dia1net]
+
+networks:
+  dia1net:
+
+volumes:
+  solo-data:
+  legacy-data:

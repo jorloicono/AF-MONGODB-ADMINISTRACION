@@ -1,0 +1,124 @@
+# =============================================================================
+#  Curso de Administración de MongoDB - Entorno principal (días 2, 3 y 4)
+#
+#  Replica set "rs0" de tres nodos con MongoDB Community Server 8.0
+#  + contenedor "toolbox" con mongosh y MongoDB Database Tools
+#
+#  Arranque:   docker compose up -d
+#  Estado:     docker compose ps
+#  Parada:     docker compose stop
+#  Borrado:    docker compose down -v      (¡elimina también los datos!)
+# =============================================================================
+name: curso-mongo
+
+x-mongod: &mongod
+  image: mongodb/mongodb-community-server:${MONGO_TAG:-8.0-ubi9}
+  # Sustituimos el entrypoint para poder copiar el keyfile con permisos 400
+  # (mongod rechaza un keyfile legible por otros usuarios).
+  entrypoint: ["bash", "-c"]
+  command:
+    - >-
+      cp /keys/keyfile /tmp/keyfile && chmod 400 /tmp/keyfile &&
+      exec mongod --replSet rs0 --bind_ip_all --port 27017
+      --keyFile /tmp/keyfile
+      --wiredTigerCacheSizeGB 0.25
+      $${EXTRA_ARGS:-}
+  depends_on:
+    keygen:
+      condition: service_completed_successfully
+  restart: unless-stopped
+  stop_grace_period: 60s
+  networks: [mongonet]
+
+services:
+
+  # Genera (una sola vez) el keyfile compartido para la autenticación interna
+  keygen:
+    image: mongo:8.0
+    entrypoint: ["bash", "-c"]
+    command:
+      - >-
+        if [ ! -s /keys/keyfile ]; then
+          head -c 756 /dev/urandom | base64 -w 0 > /keys/keyfile &&
+          echo 'keyfile generado';
+        else echo 'keyfile ya existente'; fi;
+        chmod 444 /keys/keyfile
+    volumes:
+      - keys:/keys
+    networks: [mongonet]
+
+  mongo1:
+    <<: *mongod
+    container_name: mongo1
+    hostname: mongo1
+    environment:
+      EXTRA_ARGS: ""
+    volumes:
+      - mongo1-data:/data/db
+      - keys:/keys:ro
+      - certs:/certs:ro
+      - ./scripts:/scripts:ro
+
+  mongo2:
+    <<: *mongod
+    container_name: mongo2
+    hostname: mongo2
+    environment:
+      EXTRA_ARGS: ""
+    volumes:
+      - mongo2-data:/data/db
+      - keys:/keys:ro
+      - certs:/certs:ro
+      - ./scripts:/scripts:ro
+
+  mongo3:
+    <<: *mongod
+    container_name: mongo3
+    hostname: mongo3
+    environment:
+      EXTRA_ARGS: ""
+    volumes:
+      - mongo3-data:/data/db
+      - keys:/keys:ro
+      - certs:/certs:ro
+      - ./scripts:/scripts:ro
+
+  # Puesto de administración: mongosh, mongodump, mongorestore, mongostat, mongotop...
+  # Se trabaja DENTRO de este contenedor:  docker compose exec toolbox bash
+  toolbox:
+    image: mongo:8.0
+    container_name: toolbox
+    hostname: toolbox
+    entrypoint: ["sleep", "infinity"]
+    init: true
+    environment:
+      RS: "mongodb://admin:CursoMongo2026@mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0&authSource=admin"
+    working_dir: /scripts
+    volumes:
+      - ./scripts:/scripts:ro
+      - certs:/certs:ro
+      - dumps:/dumps
+    networks: [mongonet]
+
+  # Generador de certificados TLS (día 3). Solo se ejecuta bajo demanda:
+  #   docker compose run --rm certgen
+  certgen:
+    image: alpine/openssl
+    profiles: ["tools"]
+    entrypoint: ["sh", "/scripts/gen-certs.sh"]
+    volumes:
+      - ./scripts:/scripts:ro
+      - certs:/certs
+    networks: [mongonet]
+
+networks:
+  mongonet:
+    name: mongonet
+
+volumes:
+  keys:
+  certs:
+  dumps:
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:

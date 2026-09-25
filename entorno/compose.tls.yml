@@ -1,0 +1,30 @@
+# =============================================================================
+#  Override para el Laboratorio 09 (TLS). Se usa JUNTO al compose principal:
+#
+#    docker compose -f compose.yml -f compose.tls.yml up -d mongo3
+#
+#  El modo TLS se lee de la variable TLS_MODE del fichero .env
+#  (allowTLS -> preferTLS -> requireTLS). Valor por defecto: allowTLS
+# =============================================================================
+services:
+  mongo1:
+    environment:
+      EXTRA_ARGS: >-
+        --tlsMode ${TLS_MODE:-allowTLS}
+        --tlsCertificateKeyFile /certs/mongo1.pem
+        --tlsCAFile /certs/ca.pem
+        --tlsAllowConnectionsWithoutCertificates
+  mongo2:
+    environment:
+      EXTRA_ARGS: >-
+        --tlsMode ${TLS_MODE:-allowTLS}
+        --tlsCertificateKeyFile /certs/mongo2.pem
+        --tlsCAFile /certs/ca.pem
+        --tlsAllowConnectionsWithoutCertificates
+  mongo3:
+    environment:
+      EXTRA_ARGS: >-
+        --tlsMode ${TLS_MODE:-allowTLS}
+        --tlsCertificateKeyFile /certs/mongo3.pem
+        --tlsCAFile /certs/ca.pem
+        --tlsAllowConnectionsWithoutCertificates

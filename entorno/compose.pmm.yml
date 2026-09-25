@@ -1,0 +1,43 @@
+# =============================================================================
+#  Override para el Laboratorio 13: Percona Monitoring and Management (PMM 3)
+#
+#    docker compose -f compose.yml -f compose.pmm.yml up -d
+#
+#  Interfaz web:  https://localhost:8443   (usuario admin / CursoMongo2026)
+#  El certificado es autofirmado: el navegador mostrará un aviso, es normal.
+#  PMM Server necesita ~2-3 GB de RAM adicionales.
+# =============================================================================
+services:
+  pmm-server:
+    image: percona/pmm-server:${PMM_TAG:-3}
+    container_name: pmm-server
+    hostname: pmm-server
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "CursoMongo2026"
+    ports:
+      - "8443:8443"
+    volumes:
+      - pmm-data:/srv
+    networks: [mongonet]
+
+  pmm-client:
+    image: percona/pmm-client:${PMM_TAG:-3}
+    container_name: pmm-client
+    hostname: pmm-client
+    restart: on-failure
+    depends_on: [pmm-server]
+    environment:
+      PMM_AGENT_SERVER_ADDRESS: "pmm-server:8443"
+      PMM_AGENT_SERVER_USERNAME: "admin"
+      PMM_AGENT_SERVER_PASSWORD: "CursoMongo2026"
+      PMM_AGENT_SERVER_INSECURE_TLS: "1"
+      PMM_AGENT_SETUP: "1"
+      PMM_AGENT_SETUP_FORCE: "1"
+      PMM_AGENT_SETUP_NODE_NAME: "pmm-client-curso"
+      PMM_AGENT_SETUP_NODE_TYPE: "container"
+      PMM_AGENT_CONFIG_FILE: "config/pmm-agent.yaml"
+    networks: [mongonet]
+
+volumes:
+  pmm-data:

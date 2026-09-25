@@ -1,0 +1,38 @@
+# =============================================================================
+#  Override para el Laboratorio 12: Percona Backup for MongoDB (PBM)
+#
+#    docker compose -f compose.yml -f compose.pbm.yml up -d
+#
+#  PBM necesita un agente (pbm-agent) por cada nodo mongod. Los tres agentes
+#  comparten el volumen "pbm-backups", que actúa como almacenamiento de backups
+#  de tipo "filesystem" (en producción sería S3, Azure Blob, GCS, NFS...).
+#  Con MongoDB Community, PBM solo soporta backups LÓGICOS (y PITR).
+# =============================================================================
+x-pbm: &pbm
+  image: percona/percona-backup-mongodb:${PBM_TAG:-2.15.0}
+  user: root            # simplificación de laboratorio: permisos sobre el volumen compartido
+  restart: unless-stopped
+  networks: [mongonet]
+  volumes:
+    - pbm-backups:/backups
+    - ./scripts:/scripts:ro
+
+services:
+  pbm1:
+    <<: *pbm
+    container_name: pbm1
+    environment:
+      PBM_MONGODB_URI: "mongodb://pbmuser:PbmCurso2026@mongo1:27017/?authSource=admin"
+  pbm2:
+    <<: *pbm
+    container_name: pbm2
+    environment:
+      PBM_MONGODB_URI: "mongodb://pbmuser:PbmCurso2026@mongo2:27017/?authSource=admin"
+  pbm3:
+    <<: *pbm
+    container_name: pbm3
+    environment:
+      PBM_MONGODB_URI: "mongodb://pbmuser:PbmCurso2026@mongo3:27017/?authSource=admin"
+
+volumes:
+  pbm-backups:

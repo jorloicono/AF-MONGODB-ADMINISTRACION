@@ -1,0 +1,11 @@
+# Artefactos locales que no deben subirse
+*.tgz
+*.gz
+*.archive
+backups/
+dumps/
+certs/
+*.key
+*.pem
+.DS_Store
+Thumbs.db

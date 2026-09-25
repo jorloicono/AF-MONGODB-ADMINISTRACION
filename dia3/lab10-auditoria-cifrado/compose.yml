@@ -1,0 +1,91 @@
+# =============================================================================
+#  Laboratorio 10 - Auditoría y cifrado en reposo con Percona Server for MongoDB
+#
+#  MongoDB Community NO incluye auditoría ni cifrado en reposo (son funciones
+#  de MongoDB Enterprise). Percona Server for MongoDB es una distribución libre
+#  y compatible que sí las incluye.
+#
+#  psmdb      -> Percona Server for MongoDB 8.0 con cifrado + auditoría
+#  comunidad  -> MongoDB Community 8.0 SIN cifrado, para comparar
+#  toolbox    -> mongosh y Database Tools
+#
+#  Arranque:  docker compose up -d
+# =============================================================================
+name: curso-mongo-percona
+
+services:
+
+  # Genera la clave maestra de cifrado (32 bytes en base64) con permisos 600
+  keyinit:
+    image: percona/percona-server-mongodb:8.0
+    user: root
+    entrypoint: ["bash", "-c"]
+    command:
+      - >-
+        if [ ! -s /enc/mongodb-key ]; then head -c 32 /dev/urandom | base64 > /enc/mongodb-key; echo 'clave generada'; fi;
+        chown mongodb /enc/mongodb-key && chmod 600 /enc/mongodb-key && ls -l /enc;
+        chown mongodb /hotbackup
+    volumes:
+      - enc:/enc
+      - hotbackup:/hotbackup
+
+  psmdb:
+    image: percona/percona-server-mongodb:8.0
+    container_name: psmdb
+    hostname: psmdb
+    depends_on:
+      keyinit:
+        condition: service_completed_successfully
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: CursoMongo2026
+    command:
+      - "--bind_ip_all"
+      # --- Cifrado en reposo con clave local (en producción: HashiCorp Vault o KMIP)
+      - "--enableEncryption"
+      - "--encryptionKeyFile=/enc/mongodb-key"
+      # --- Auditoría en fichero JSON
+      - "--auditDestination=file"
+      - "--auditFormat=JSON"
+      - "--auditPath=/data/db/auditLog.json"
+      - "--setParameter=auditAuthorizationSuccess=true"
+      - >-
+        --auditFilter={"$$or":[{"atype":{"$$in":["authenticate","createUser","dropUser","updateUser","grantRolesToUser","createCollection","dropCollection","dropDatabase","createIndex"]}},{"atype":"authCheck","param.ns":"rrhh.nominas"}]}
+    stop_grace_period: 60s
+    volumes:
+      - psmdb-data:/data/db
+      - enc:/enc:ro
+      - hotbackup:/hotbackup
+    networks: [perconanet]
+
+  comunidad:
+    image: mongodb/mongodb-community-server:8.0-ubi9
+    container_name: comunidad
+    hostname: comunidad
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: CursoMongo2026
+    stop_grace_period: 60s
+    volumes:
+      - comunidad-data:/data/db
+    networks: [perconanet]
+
+  toolbox:
+    image: mongo:8.0
+    container_name: toolbox-percona
+    hostname: toolbox
+    entrypoint: ["sleep", "infinity"]
+    init: true
+    environment:
+      PS: "mongodb://admin:CursoMongo2026@psmdb:27017/?authSource=admin"
+      CE: "mongodb://admin:CursoMongo2026@comunidad:27017/?authSource=admin"
+    networks: [perconanet]
+
+networks:
+  perconanet:
+
+volumes:
+  enc:
+  psmdb-data:
+  comunidad-data:
+  hotbackup:
