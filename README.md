@@ -4,6 +4,10 @@ Repositorio de laboratorios del curso de **administración de MongoDB** (16 hora
 
 El objetivo del curso es que salgas sabiendo operar MongoDB en el día a día: poner en marcha instancias nuevas, configurar la replicación y la alta disponibilidad, protegerlas, hacer copias de seguridad y restaurarlas, monitorizarlas y resolver problemas.
 
+## Guía para el instructor
+
+**[GUIA-ENTORNO.md](GUIA-ENTORNO.md)** explica cómo arrancar, reparar y apagar el entorno en Windows, y recoge los problemas conocidos con su solución. Para dejar todo en marcha de una vez: doble clic en `levantar-todo.bat`; si algo falla: `reparar-entorno.bat`.
+
 ## Antes del primer día
 
 Sigue la guía **[00-preparacion](00-preparacion/README.md)**. Es imprescindible tener Docker funcionando y las imágenes descargadas antes de empezar: descargarlas todas durante la clase, con veinte personas en la misma red, puede llevar mucho tiempo.

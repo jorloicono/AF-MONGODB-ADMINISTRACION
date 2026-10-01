@@ -22,7 +22,8 @@ if (!hello.setName) {
   print("Iniciando el replica set rs0...");
   printjson(rs.initiate(cfg));
 } else {
-  print("El nodo ya pertenece al replica set " + hello.setName);
+  print("El replica set " + hello.setName + " ya existe (primario actual: " + (hello.primary || "en eleccion") + "). No hay nada que iniciar.");
+  quit(0);
 }
 
 print("Esperando a que mongo1 sea PRIMARY...");
