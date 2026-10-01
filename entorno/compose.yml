@@ -15,9 +15,13 @@ x-mongod: &mongod
   image: mongodb/mongodb-community-server:${MONGO_TAG:-8.0-ubi9}
   # Sustituimos el entrypoint para poder copiar el keyfile con permisos 400
   # (mongod rechaza un keyfile legible por otros usuarios).
+  # El rm -f inicial es imprescindible: al reiniciar el contenedor (por ejemplo,
+  # al volver a abrir Docker Desktop) la copia anterior sigue en /tmp con
+  # permisos 400 y cp no podria sobrescribirla.
   entrypoint: ["bash", "-c"]
   command:
     - >-
+      rm -f /tmp/keyfile &&
       cp /keys/keyfile /tmp/keyfile && chmod 400 /tmp/keyfile &&
       exec mongod --replSet rs0 --bind_ip_all --port 27017
       --keyFile /tmp/keyfile

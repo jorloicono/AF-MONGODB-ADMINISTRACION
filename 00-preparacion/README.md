@@ -91,3 +91,5 @@ docker compose stop
 **Límite de descargas de Docker Hub.** Los usuarios anónimos tienen un límite de descargas por IP. Si toda la clase sale por la misma IP, iniciad sesión con `docker login` (una cuenta gratuita basta) o descargad las imágenes el día anterior.
 
 **Mac con Apple Silicon.** Todas las imágenes del curso publican variante ARM64, pero si alguna diera problemas, Docker Desktop puede ejecutar la variante x86 con emulación activando *Use Rosetta for x86/amd64 emulation*.
+
+**"cp: cannot create regular file '/tmp/keyfile': Permission denied" al arrancar el replica set otro día.** Pasaba con versiones antiguas del `compose.yml` cuando Docker reiniciaba los contenedores. Actualiza el repositorio (`git pull`) y recrea los nodos sin perder datos con `docker compose up -d --force-recreate mongo1 mongo2 mongo3`.
